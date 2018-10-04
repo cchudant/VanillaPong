@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Made with Thimble</title>
+    <style>
+      /* Fonts from Google Fonts - more at https://fonts.google.com */
+      @import url('https://fonts.googleapis.com/css?family=Open+Sans:400,700');
+      @import url('https://fonts.googleapis.com/css?family=Merriweather:400,700');
+
+      body {
+        background-color: white;
+        font-family: "Open Sans", sans-serif;
+        padding: 5px 25px;
+        font-size: 18px;
+        margin: 0;
+        color: #444;
+        background-color: blanchedalmond;
+      }
+
+      h1 {
+        font-family: "Merriweather", serif;
+        font-size: 32px;
+      }
+
+      canvas {
+        background-color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Welcome to Pong</h1>
+    <p>Play pong with a friend!<br>Click the square to start.</p>
+    <p>
+      <strong>Player 1:</strong> use A or D to move<br>
+      <strong>Player 2:</strong> use LeftArrow or RightArrow to move
+    </p>
+    <canvas height=310 width=360></canvas>
+    <br>
+  </body>
+  <script>
+    const $ = document.querySelector.bind(document)
+    const canvas = $('canvas')
+    const ctx = canvas.getContext('2d')
+    let interval
+    
+    function game() {
+      const w = canvas.width
+      const h = canvas.height
+
+      const player1 = {
+        n: 1,
+        x: w/2, y: h-20,
+        vx: 0,
+        size: 50,
+        keys: {
+          'q': -1.5,
+          'd': 1.5
+        }
+      }
+      const player2 = {
+        n: 2,
+        x: w/2, y: 20,
+        vx: 0,
+        size: 50,
+        keys: {
+          'ArrowLeft': -1.5,
+          'ArrowRight': 1.5
+        }
+      }
+      const ball = {
+        x: w/2, y: h/2,
+        vx: 1, vy: 1,
+        size: 5
+      }
+      const loop = 10
+
+      const interval = setInterval(() => {
+
+        // Clear bars
+        function clearBar(player) {
+          ctx.clearRect(player.x - player.size/2, player.y - 1, player.size + 2, 2)
+        }
+
+        clearBar(player1)
+        clearBar(player2)
+
+        // Player position
+        function position(player) {
+          const newX = player.x + player.vx
+          if (newX - player.size/2 < 0 || newX + player.size/2 > w)
+            return
+            player.x = newX
+        }
+
+        position(player1)
+        position(player2)
+
+        // Clear ball
+        ctx.clearRect(ball.x - 2*ball.size, ball.y - 2*ball.size, 4*ball.size, 4*ball.size)
+
+        // Draw ball
+        ctx.beginPath()
+        ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2, true)
+        ctx.stroke()
+
+        // Ball position
+        const newX = ball.x + ball.vx
+        const newY = ball.y + ball.vy
+
+        // Player collision
+        if (newY + ball.size > player1.y &&
+            newX - ball.size < player1.x + player1.size/2 &&
+            newX + ball.size > player1.x - player1.size/2) {
+          ball.vy = -ball.vy
+        }
+
+        if (newY - ball.size < player2.y &&
+            newX - ball.size < player2.x + player2.size/2 &&
+            newX + ball.size > player2.x - player2.size/2) {
+          ball.vy = -ball.vy
+        }
+
+
+        // Wall collision
+        if (newX - ball.size < 0 || newX + ball.size > w) {
+          ball.vx = -ball.vx
+        }
+        //if (newY - ball.size < 0 || newY + ball.size > h) {
+        //  ball.vy = -ball.vy
+        //}
+
+        ball.x = newX
+        ball.y = newY
+
+        // Draw bars
+        function drawBar(player) {
+          ctx.beginPath()
+          ctx.strokeStyle = 'rgba(0,0,0)'
+          ctx.moveTo(player.x - player.size/2, player.y)
+          ctx.lineTo(player.x + player.size/2, player.y)
+          ctx.stroke()
+        }
+
+        drawBar(player1)
+        drawBar(player2)
+
+        // Win check
+        if (newY - ball.size < 0)
+          win(player1)
+        if (newY + ball.size > h)
+          win(player2)
+
+      }, loop)
+
+      document.addEventListener('keydown', e => {
+        function handle(player) {
+          const v = player.keys[e.key]
+          if (v)
+            player.vx = v
+        }
+
+        handle(player1)
+        handle(player2)
+      })
+
+      document.addEventListener('keyup', e => {
+        function handle(player) {
+          const v = player.keys[e.key]
+          if (v)
+            player.vx = 0
+        }
+
+        handle(player1)
+        handle(player2)
+      })
+
+      return interval
+    }
+
+    function win(player) {
+      document.body.append(`Player ${player.n} wins! `)
+      interval && clearInterval(interval)
+    }
+    
+    canvas.addEventListener('click', e => {
+      interval && clearInterval(interval)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      interval = game()
+    })
+    
+  </script>
+</html>
